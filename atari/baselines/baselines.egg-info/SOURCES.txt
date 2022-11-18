@@ -1,3 +1,4 @@
+LICENSE
 README.md
 setup.cfg
 setup.py
@@ -56,6 +57,7 @@ baselines/common/schedules.py
 baselines/common/segment_tree.py
 baselines/common/tf_util.py
 baselines/common/tile_images.py
+baselines/common/trex_utils.py
 baselines/common/tests/__init__.py
 baselines/common/tests/test_cartpole.py
 baselines/common/tests/test_doc_examples.py

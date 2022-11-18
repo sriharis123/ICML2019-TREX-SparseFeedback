@@ -94,7 +94,7 @@ if __name__=="__main__":
     seed = int(args.seed)
     torch.manual_seed(seed)
     np.random.seed(seed)
-    tf.set_random_seed(seed)
+    tf.random.set_seed(seed)
 
     checkpointpath = args.checkpointpath
     print("*"*10)

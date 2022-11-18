@@ -163,7 +163,7 @@ class Net(nn.Module):
         x = F.leaky_relu(self.conv2(x))
         x = F.leaky_relu(self.conv3(x))
         x = F.leaky_relu(self.conv4(x))
-        x = x.view(-1, 784)
+        x = x.reshape(-1, 784)
         x = F.leaky_relu(self.fc1(x))
         r = self.fc2(x)
         sum_rewards += torch.sum(r)
@@ -208,7 +208,7 @@ def learn_reward(reward_network, optimizer, training_inputs, training_outputs, n
             #forward + backward + optimize
             outputs, abs_rewards = reward_network.forward(traj_i, traj_j)
             outputs = outputs.unsqueeze(0)
-            loss = loss_criterion(outputs, labels) + l1_reg * abs_rewards
+            loss = loss_criterion(torch.LongTensor(outputs), torch.LongTensor(labels)) + l1_reg * abs_rewards
             loss.backward()
             optimizer.step()
 
@@ -294,7 +294,7 @@ if __name__=="__main__":
     seed = int(args.seed)
     torch.manual_seed(seed)
     np.random.seed(seed)
-    tf.set_random_seed(seed)
+    tf.random.set_seed(seed)
 
     print("Training reward for", env_id)
     num_trajs = args.num_trajs 

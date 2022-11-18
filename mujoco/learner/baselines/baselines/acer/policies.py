@@ -11,8 +11,8 @@ class AcerCnnPolicy(object):
         nh, nw, nc = ob_space.shape
         ob_shape = (nbatch, nh, nw, nc * nstack)
         nact = ac_space.n
-        X = tf.placeholder(tf.uint8, ob_shape)  # obs
-        with tf.variable_scope("model", reuse=reuse):
+        X = tf.compat.v1.placeholder(tf.uint8, ob_shape)  # obs
+        with tf.compat.v1.variable_scope("model", reuse=reuse):
             h = nature_cnn(X)
             pi_logits = fc(h, 'pi', nact, init_scale=0.01)
             pi = tf.nn.softmax(pi_logits)
@@ -49,10 +49,10 @@ class AcerLstmPolicy(object):
         nh, nw, nc = ob_space.shape
         ob_shape = (nbatch, nh, nw, nc * nstack)
         nact = ac_space.n
-        X = tf.placeholder(tf.uint8, ob_shape)  # obs
-        M = tf.placeholder(tf.float32, [nbatch]) #mask (done t-1)
-        S = tf.placeholder(tf.float32, [nenv, nlstm*2]) #states
-        with tf.variable_scope("model", reuse=reuse):
+        X = tf.compat.v1.placeholder(tf.uint8, ob_shape)  # obs
+        M = tf.compat.v1.placeholder(tf.float32, [nbatch]) #mask (done t-1)
+        S = tf.compat.v1.placeholder(tf.float32, [nenv, nlstm*2]) #states
+        with tf.compat.v1.variable_scope("model", reuse=reuse):
             h = nature_cnn(X)
 
             # lstm

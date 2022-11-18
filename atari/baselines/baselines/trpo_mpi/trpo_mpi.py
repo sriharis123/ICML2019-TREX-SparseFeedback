@@ -158,7 +158,7 @@ def learn(*,
         rank = 0
 
     cpus_per_worker = 1
-    U.get_session(config=tf.ConfigProto(
+    U.get_session(config=tf.compat.v1.ConfigProto(
             allow_soft_placement=True,
             inter_op_parallelism_threads=cpus_per_worker,
             intra_op_parallelism_threads=cpus_per_worker
@@ -175,13 +175,13 @@ def learn(*,
     ac_space = env.action_space
 
     ob = observation_placeholder(ob_space)
-    with tf.variable_scope("pi"):
+    with tf.compat.v1.variable_scope("pi"):
         pi = policy(observ_placeholder=ob)
-    with tf.variable_scope("oldpi"):
+    with tf.compat.v1.variable_scope("oldpi"):
         oldpi = policy(observ_placeholder=ob)
 
-    atarg = tf.placeholder(dtype=tf.float32, shape=[None]) # Target advantage function (if applicable)
-    ret = tf.placeholder(dtype=tf.float32, shape=[None]) # Empirical return
+    atarg = tf.compat.v1.placeholder(dtype=tf.float32, shape=[None]) # Target advantage function (if applicable)
+    ret = tf.compat.v1.placeholder(dtype=tf.float32, shape=[None]) # Empirical return
 
     ac = pi.pdtype.sample_placeholder([None])
 
@@ -213,7 +213,7 @@ def learn(*,
     get_flat = U.GetFlat(var_list)
     set_from_flat = U.SetFromFlat(var_list)
     klgrads = tf.gradients(dist, var_list)
-    flat_tangent = tf.placeholder(dtype=tf.float32, shape=[None], name="flat_tan")
+    flat_tangent = tf.compat.v1.placeholder(dtype=tf.float32, shape=[None], name="flat_tan")
     shapes = [var.get_shape().as_list() for var in var_list]
     start = 0
     tangents = []

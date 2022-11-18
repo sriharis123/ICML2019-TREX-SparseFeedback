@@ -16,11 +16,11 @@ class MlpPolicy(object):
     recurrent = False
 
     def __init__(self, name, reuse=False, *args, **kwargs):
-        with tf.variable_scope(name):
+        with tf.compat.v1.variable_scope(name):
             if reuse:
-                tf.get_variable_scope().reuse_variables()
+                tf.get_compat.v1.variable_scope().reuse_variables()
             self._init(*args, **kwargs)
-            self.scope = tf.get_variable_scope().name
+            self.scope = tf.get_compat.v1.variable_scope().name
 
     def _init(self, ob_space, ac_space, hid_size, num_hid_layers, gaussian_fixed_var=True):
         assert isinstance(ob_space, gym.spaces.Box)
@@ -30,7 +30,7 @@ class MlpPolicy(object):
 
         ob = U.get_placeholder(name="ob", dtype=tf.float32, shape=[sequence_length] + list(ob_space.shape))
 
-        with tf.variable_scope("obfilter"):
+        with tf.compat.v1.variable_scope("obfilter"):
             self.ob_rms = RunningMeanStd(shape=ob_space.shape)
 
         obz = tf.clip_by_value((ob - self.ob_rms.mean) / self.ob_rms.std, -5.0, 5.0)
@@ -45,7 +45,7 @@ class MlpPolicy(object):
 
         if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
             mean = dense(last_out, pdtype.param_shape()[0]//2, "polfinal", U.normc_initializer(0.01))
-            logstd = tf.get_variable(name="logstd", shape=[1, pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
+            logstd = tf.compat.v1.get_variable(name="logstd", shape=[1, pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
             pdparam = tf.concat([mean, mean * 0.0 + logstd], axis=1)
         else:
             pdparam = dense(last_out, pdtype.param_shape()[0], "polfinal", U.normc_initializer(0.01))

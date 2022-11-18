@@ -28,7 +28,7 @@ class Model(object):
                 nsteps, ent_coef, vf_coef, max_grad_norm, microbatch_size=None):
         self.sess = sess = get_session()
 
-        with tf.variable_scope('ppo2_model', reuse=tf.AUTO_REUSE):
+        with tf.compat.v1.variable_scope('ppo2_model', reuse=tf.compat.v1.AUTO_REUSE):
             # CREATE OUR TWO MODELS
             # act_model that is used for sampling
             act_model = policy(nbatch_act, 1, sess)
@@ -41,15 +41,15 @@ class Model(object):
 
         # CREATE THE PLACEHOLDERS
         self.A = A = train_model.pdtype.sample_placeholder([None])
-        self.ADV = ADV = tf.placeholder(tf.float32, [None])
-        self.R = R = tf.placeholder(tf.float32, [None])
+        self.ADV = ADV = tf.compat.v1.placeholder(tf.float32, [None])
+        self.R = R = tf.compat.v1.placeholder(tf.float32, [None])
         # Keep track of old actor
-        self.OLDNEGLOGPAC = OLDNEGLOGPAC = tf.placeholder(tf.float32, [None])
+        self.OLDNEGLOGPAC = OLDNEGLOGPAC = tf.compat.v1.placeholder(tf.float32, [None])
         # Keep track of old critic
-        self.OLDVPRED = OLDVPRED = tf.placeholder(tf.float32, [None])
-        self.LR = LR = tf.placeholder(tf.float32, [])
+        self.OLDVPRED = OLDVPRED = tf.compat.v1.placeholder(tf.float32, [None])
+        self.LR = LR = tf.compat.v1.placeholder(tf.float32, [])
         # Cliprange
-        self.CLIPRANGE = CLIPRANGE = tf.placeholder(tf.float32, [])
+        self.CLIPRANGE = CLIPRANGE = tf.compat.v1.placeholder(tf.float32, [])
 
         neglogpac = train_model.pd.neglogp(A)
 
@@ -82,19 +82,19 @@ class Model(object):
         # Final PG loss
         pg_loss = tf.reduce_mean(tf.maximum(pg_losses, pg_losses2))
         approxkl = .5 * tf.reduce_mean(tf.square(neglogpac - OLDNEGLOGPAC))
-        clipfrac = tf.reduce_mean(tf.to_float(tf.greater(tf.abs(ratio - 1.0), CLIPRANGE)))
+        clipfrac = tf.reduce_mean(tf.compat.v1.to_float(tf.greater(tf.abs(ratio - 1.0), CLIPRANGE)))
 
         # Total loss
         loss = pg_loss - entropy * ent_coef + vf_loss * vf_coef
 
         # UPDATE THE PARAMETERS USING LOSS
         # 1. Get the model parameters
-        params = tf.trainable_variables('ppo2_model')
+        params = tf.compat.v1.trainable_variables('ppo2_model')
         # 2. Build our trainer
         if MPI is not None:
             self.trainer = MpiAdamOptimizer(MPI.COMM_WORLD, learning_rate=LR, epsilon=1e-5)
         else:
-            self.trainer = tf.train.AdamOptimizer(learning_rate=LR, epsilon=1e-5)
+            self.trainer = tf.compat.v1.train.AdamOptimizer(learning_rate=LR, epsilon=1e-5)
         # 3. Calculate the gradients
         grads_and_var = self.trainer.compute_gradients(loss, params)
         grads, var = zip(*grads_and_var)

@@ -6,9 +6,9 @@ from baselines.common.distributions import make_pdtype
 class CnnPolicy(object):
     recurrent = False
     def __init__(self, name, ob_space, ac_space, kind='large'):
-        with tf.variable_scope(name):
+        with tf.compat.v1.variable_scope(name):
             self._init(ob_space, ac_space, kind)
-            self.scope = tf.get_variable_scope().name
+            self.scope = tf.get_compat.v1.variable_scope().name
 
     def _init(self, ob_space, ac_space, kind):
         assert isinstance(ob_space, gym.spaces.Box)
@@ -23,24 +23,24 @@ class CnnPolicy(object):
             x = tf.nn.relu(U.conv2d(x, 16, "l1", [8, 8], [4, 4], pad="VALID"))
             x = tf.nn.relu(U.conv2d(x, 32, "l2", [4, 4], [2, 2], pad="VALID"))
             x = U.flattenallbut0(x)
-            x = tf.nn.relu(tf.layers.dense(x, 256, name='lin', kernel_initializer=U.normc_initializer(1.0)))
+            x = tf.nn.relu(tf.compat.v1.layers.dense(x, 256, name='lin', kernel_initializer=U.normc_initializer(1.0)))
         elif kind == 'large': # Nature DQN
             x = tf.nn.relu(U.conv2d(x, 32, "l1", [8, 8], [4, 4], pad="VALID"))
             x = tf.nn.relu(U.conv2d(x, 64, "l2", [4, 4], [2, 2], pad="VALID"))
             x = tf.nn.relu(U.conv2d(x, 64, "l3", [3, 3], [1, 1], pad="VALID"))
             x = U.flattenallbut0(x)
-            x = tf.nn.relu(tf.layers.dense(x, 512, name='lin', kernel_initializer=U.normc_initializer(1.0)))
+            x = tf.nn.relu(tf.compat.v1.layers.dense(x, 512, name='lin', kernel_initializer=U.normc_initializer(1.0)))
         else:
             raise NotImplementedError
 
-        logits = tf.layers.dense(x, pdtype.param_shape()[0], name='logits', kernel_initializer=U.normc_initializer(0.01))
+        logits = tf.compat.v1.layers.dense(x, pdtype.param_shape()[0], name='logits', kernel_initializer=U.normc_initializer(0.01))
         self.pd = pdtype.pdfromflat(logits)
-        self.vpred = tf.layers.dense(x, 1, name='value', kernel_initializer=U.normc_initializer(1.0))[:,0]
+        self.vpred = tf.compat.v1.layers.dense(x, 1, name='value', kernel_initializer=U.normc_initializer(1.0))[:,0]
 
         self.state_in = []
         self.state_out = []
 
-        stochastic = tf.placeholder(dtype=tf.bool, shape=())
+        stochastic = tf.compat.v1.placeholder(dtype=tf.bool, shape=())
         ac = self.pd.sample() # XXX
         self._act = U.function([stochastic, ob], [ac, self.vpred])
 

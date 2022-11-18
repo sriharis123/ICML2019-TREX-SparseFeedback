@@ -4,18 +4,18 @@ import tensorflow as tf
 from collections import deque
 
 def sample(logits):
-    noise = tf.random_uniform(tf.shape(logits))
-    return tf.argmax(logits - tf.log(-tf.log(noise)), 1)
+    noise = tf.random.uniform(tf.shape(logits))
+    return tf.argmax(logits - tf.math.log(-tf.math.log(noise)), 1)
 
 def cat_entropy(logits):
     a0 = logits - tf.reduce_max(logits, 1, keepdims=True)
     ea0 = tf.exp(a0)
     z0 = tf.reduce_sum(ea0, 1, keepdims=True)
     p0 = ea0 / z0
-    return tf.reduce_sum(p0 * (tf.log(z0) - a0), 1)
+    return tf.reduce_sum(p0 * (tf.math.log(z0) - a0), 1)
 
 def cat_entropy_softmax(p0):
-    return - tf.reduce_sum(p0 * tf.log(p0 + 1e-6), axis = 1)
+    return - tf.reduce_sum(p0 * tf.math.log(p0 + 1e-6), axis = 1)
 
 def ortho_init(scale=1.0):
     def _ortho_init(shape, dtype, partition_info=None):
@@ -46,20 +46,20 @@ def conv(x, scope, *, nf, rf, stride, pad='VALID', init_scale=1.0, data_format='
     else:
         raise NotImplementedError
     bias_var_shape = [nf] if one_dim_bias else [1, nf, 1, 1]
-    nin = x.get_shape()[channel_ax].value
+    nin = x.get_shape()[channel_ax]
     wshape = [rf, rf, nin, nf]
-    with tf.variable_scope(scope):
-        w = tf.get_variable("w", wshape, initializer=ortho_init(init_scale))
-        b = tf.get_variable("b", bias_var_shape, initializer=tf.constant_initializer(0.0))
+    with tf.compat.v1.variable_scope(scope):
+        w = tf.compat.v1.get_variable("w", wshape, initializer=ortho_init(init_scale))
+        b = tf.compat.v1.get_variable("b", bias_var_shape, initializer=tf.constant_initializer(0.0))
         if not one_dim_bias and data_format == 'NHWC':
             b = tf.reshape(b, bshape)
         return tf.nn.conv2d(x, w, strides=strides, padding=pad, data_format=data_format) + b
 
 def fc(x, scope, nh, *, init_scale=1.0, init_bias=0.0):
-    with tf.variable_scope(scope):
-        nin = x.get_shape()[1].value
-        w = tf.get_variable("w", [nin, nh], initializer=ortho_init(init_scale))
-        b = tf.get_variable("b", [nh], initializer=tf.constant_initializer(init_bias))
+    with tf.compat.v1.variable_scope(scope):
+        nin = x.get_shape()[1]
+        w = tf.compat.v1.get_variable("w", [nin, nh], initializer=ortho_init(init_scale))
+        b = tf.compat.v1.get_variable("b", [nh], initializer=tf.constant_initializer(init_bias))
         return tf.matmul(x, w)+b
 
 def batch_to_seq(h, nbatch, nsteps, flat=False):
@@ -73,17 +73,17 @@ def seq_to_batch(h, flat = False):
     shape = h[0].get_shape().as_list()
     if not flat:
         assert(len(shape) > 1)
-        nh = h[0].get_shape()[-1].value
+        nh = h[0].get_shape()[-1]
         return tf.reshape(tf.concat(axis=1, values=h), [-1, nh])
     else:
         return tf.reshape(tf.stack(values=h, axis=1), [-1])
 
 def lstm(xs, ms, s, scope, nh, init_scale=1.0):
-    nbatch, nin = [v.value for v in xs[0].get_shape()]
-    with tf.variable_scope(scope):
-        wx = tf.get_variable("wx", [nin, nh*4], initializer=ortho_init(init_scale))
-        wh = tf.get_variable("wh", [nh, nh*4], initializer=ortho_init(init_scale))
-        b = tf.get_variable("b", [nh*4], initializer=tf.constant_initializer(0.0))
+    nbatch, nin = [v for v in xs[0].get_shape()]
+    with tf.compat.v1.variable_scope(scope):
+        wx = tf.compat.v1.get_variable("wx", [nin, nh*4], initializer=ortho_init(init_scale))
+        wh = tf.compat.v1.get_variable("wh", [nh, nh*4], initializer=ortho_init(init_scale))
+        b = tf.compat.v1.get_variable("b", [nh*4], initializer=tf.constant_initializer(0.0))
 
     c, h = tf.split(axis=1, num_or_size_splits=2, value=s)
     for idx, (x, m) in enumerate(zip(xs, ms)):
@@ -108,20 +108,20 @@ def _ln(x, g, b, e=1e-5, axes=[1]):
     return x
 
 def lnlstm(xs, ms, s, scope, nh, init_scale=1.0):
-    nbatch, nin = [v.value for v in xs[0].get_shape()]
-    with tf.variable_scope(scope):
-        wx = tf.get_variable("wx", [nin, nh*4], initializer=ortho_init(init_scale))
-        gx = tf.get_variable("gx", [nh*4], initializer=tf.constant_initializer(1.0))
-        bx = tf.get_variable("bx", [nh*4], initializer=tf.constant_initializer(0.0))
+    nbatch, nin = [v for v in xs[0].get_shape()]
+    with tf.compat.v1.variable_scope(scope):
+        wx = tf.compat.v1.get_variable("wx", [nin, nh*4], initializer=ortho_init(init_scale))
+        gx = tf.compat.v1.get_variable("gx", [nh*4], initializer=tf.constant_initializer(1.0))
+        bx = tf.compat.v1.get_variable("bx", [nh*4], initializer=tf.constant_initializer(0.0))
 
-        wh = tf.get_variable("wh", [nh, nh*4], initializer=ortho_init(init_scale))
-        gh = tf.get_variable("gh", [nh*4], initializer=tf.constant_initializer(1.0))
-        bh = tf.get_variable("bh", [nh*4], initializer=tf.constant_initializer(0.0))
+        wh = tf.compat.v1.get_variable("wh", [nh, nh*4], initializer=ortho_init(init_scale))
+        gh = tf.compat.v1.get_variable("gh", [nh*4], initializer=tf.constant_initializer(1.0))
+        bh = tf.compat.v1.get_variable("bh", [nh*4], initializer=tf.constant_initializer(0.0))
 
-        b = tf.get_variable("b", [nh*4], initializer=tf.constant_initializer(0.0))
+        b = tf.compat.v1.get_variable("b", [nh*4], initializer=tf.constant_initializer(0.0))
 
-        gc = tf.get_variable("gc", [nh], initializer=tf.constant_initializer(1.0))
-        bc = tf.get_variable("bc", [nh], initializer=tf.constant_initializer(0.0))
+        gc = tf.compat.v1.get_variable("gc", [nh], initializer=tf.constant_initializer(1.0))
+        bc = tf.compat.v1.get_variable("bc", [nh], initializer=tf.constant_initializer(0.0))
 
     c, h = tf.split(axis=1, num_or_size_splits=2, value=s)
     for idx, (x, m) in enumerate(zip(xs, ms)):
@@ -140,7 +140,7 @@ def lnlstm(xs, ms, s, scope, nh, init_scale=1.0):
     return xs, s
 
 def conv_to_fc(x):
-    nh = np.prod([v.value for v in x.get_shape()[1:]])
+    nh = np.prod([v for v in x.get_shape()[1:]])
     x = tf.reshape(x, [-1, nh])
     return x
 
@@ -153,7 +153,7 @@ def discount_with_dones(rewards, dones, gamma):
     return discounted[::-1]
 
 def find_trainable_variables(key):
-    return tf.trainable_variables(key)
+    return tf.compat.v1.trainable_variables(key)
 
 def make_path(f):
     return os.makedirs(f, exist_ok=True)

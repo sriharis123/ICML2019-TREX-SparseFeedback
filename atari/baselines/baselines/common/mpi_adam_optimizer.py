@@ -2,13 +2,13 @@ import numpy as np
 import tensorflow as tf
 from mpi4py import MPI
 
-class MpiAdamOptimizer(tf.train.AdamOptimizer):
+class MpiAdamOptimizer(tf.compat.v1.train.AdamOptimizer):
     """Adam optimizer that averages gradients across mpi processes."""
     def __init__(self, comm, **kwargs):
         self.comm = comm
-        tf.train.AdamOptimizer.__init__(self, **kwargs)
+        tf.compat.v1.train.AdamOptimizer.__init__(self, **kwargs)
     def compute_gradients(self, loss, var_list, **kwargs):
-        grads_and_vars = tf.train.AdamOptimizer.compute_gradients(self, loss, var_list, **kwargs)
+        grads_and_vars = tf.compat.v1.train.AdamOptimizer.compute_gradients(self, loss, var_list, **kwargs)
         grads_and_vars = [(g, v) for g, v in grads_and_vars if g is not None]
         flat_grad = tf.concat([tf.reshape(g, (-1,)) for g, v in grads_and_vars], axis=0)
         shapes = [v.shape.as_list() for g, v in grads_and_vars]

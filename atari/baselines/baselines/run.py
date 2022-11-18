@@ -110,7 +110,7 @@ def build_env(args):
             env = VecFrameStack(env, frame_stack_size)
 
     else:
-       config = tf.ConfigProto(allow_soft_placement=True,
+       config = tf.compat.v1.ConfigProto(allow_soft_placement=True,
                                intra_op_parallelism_threads=1,
                                inter_op_parallelism_threads=1)
        config.gpu_options.allow_growth = True

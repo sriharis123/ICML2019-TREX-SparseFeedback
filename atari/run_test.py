@@ -56,10 +56,10 @@ class PPO2Agent2(object):
         self.graph = tf.Graph()
 
         if gpu:
-            config = tf.ConfigProto()
+            config = tf.compat.v1.ConfigProto()
             config.gpu_options.allow_growth = True
         else:
-            config = tf.ConfigProto(device_count = {'GPU': 0})
+            config = tf.compat.v1.ConfigProto(device_count = {'GPU': 0})
 
         self.sess = tf.Session(graph=self.graph,config=config)
 

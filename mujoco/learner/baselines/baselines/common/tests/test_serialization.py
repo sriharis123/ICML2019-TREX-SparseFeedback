@@ -115,7 +115,7 @@ def test_coexistence(learn_fn, network_fn):
 
 def _serialize_variables():
     sess = get_session()
-    variables = tf.trainable_variables()
+    variables = tf.compat.v1.trainable_variables()
     values = sess.run(variables)
     return {var.name: value for var, value in zip(variables, values)}
 

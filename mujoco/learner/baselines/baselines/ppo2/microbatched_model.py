@@ -25,7 +25,7 @@ class MicrobatchedModel(Model):
                 vf_coef=vf_coef,
                 max_grad_norm=max_grad_norm)
 
-        self.grads_ph = [tf.placeholder(dtype=g.dtype, shape=g.shape) for g in self.grads]
+        self.grads_ph = [tf.compat.v1.placeholder(dtype=g.dtype, shape=g.shape) for g in self.grads]
         grads_ph_and_vars = list(zip(self.grads_ph, self.var))
         self._apply_gradients_op = self.trainer.apply_gradients(grads_ph_and_vars)
 

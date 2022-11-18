@@ -13,8 +13,8 @@ def simple_test(env_fn, learn_fn, min_reward_fraction, n_trials=N_TRIALS):
     env = DummyVecEnv([env_fn])
 
 
-    with tf.Graph().as_default(), tf.Session(config=tf.ConfigProto(allow_soft_placement=True)).as_default():
-        tf.set_random_seed(0)
+    with tf.Graph().as_default(), tf.Session(config=tf.compat.v1.ConfigProto(allow_soft_placement=True)).as_default():
+        tf.random.set_seed(0)
 
         model = learn_fn(env)
 
@@ -43,7 +43,7 @@ def simple_test(env_fn, learn_fn, min_reward_fraction, n_trials=N_TRIALS):
 def reward_per_episode_test(env_fn, learn_fn, min_avg_reward, n_trials=N_EPISODES):
     env = DummyVecEnv([env_fn])
 
-    with tf.Graph().as_default(), tf.Session(config=tf.ConfigProto(allow_soft_placement=True)).as_default():
+    with tf.Graph().as_default(), tf.Session(config=tf.compat.v1.ConfigProto(allow_soft_placement=True)).as_default():
         model = learn_fn(env)
 
         N_TRIALS = 100

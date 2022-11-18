@@ -1,9 +1,9 @@
 import tensorflow as tf
-import tensorflow.contrib.layers as layers
+import tensorflow.keras.layers as layers
 
 
 def _mlp(hiddens, input_, num_actions, scope, reuse=False, layer_norm=False):
-    with tf.variable_scope(scope, reuse=reuse):
+    with tf.compat.v1.variable_scope(scope, reuse=reuse):
         out = input_
         for hidden in hiddens:
             out = layers.fully_connected(out, num_outputs=hidden, activation_fn=None)
@@ -31,9 +31,9 @@ def mlp(hiddens=[], layer_norm=False):
 
 
 def _cnn_to_mlp(convs, hiddens, dueling, input_, num_actions, scope, reuse=False, layer_norm=False):
-    with tf.variable_scope(scope, reuse=reuse):
+    with tf.compat.v1.variable_scope(scope, reuse=reuse):
         out = input_
-        with tf.variable_scope("convnet"):
+        with tf.compat.v1.variable_scope("convnet"):
             for num_outputs, kernel_size, stride in convs:
                 out = layers.convolution2d(out,
                                            num_outputs=num_outputs,
@@ -41,7 +41,7 @@ def _cnn_to_mlp(convs, hiddens, dueling, input_, num_actions, scope, reuse=False
                                            stride=stride,
                                            activation_fn=tf.nn.relu)
         conv_out = layers.flatten(out)
-        with tf.variable_scope("action_value"):
+        with tf.compat.v1.variable_scope("action_value"):
             action_out = conv_out
             for hidden in hiddens:
                 action_out = layers.fully_connected(action_out, num_outputs=hidden, activation_fn=None)
@@ -51,7 +51,7 @@ def _cnn_to_mlp(convs, hiddens, dueling, input_, num_actions, scope, reuse=False
             action_scores = layers.fully_connected(action_out, num_outputs=num_actions, activation_fn=None)
 
         if dueling:
-            with tf.variable_scope("state_value"):
+            with tf.compat.v1.variable_scope("state_value"):
                 state_out = conv_out
                 for hidden in hiddens:
                     state_out = layers.fully_connected(state_out, num_outputs=hidden, activation_fn=None)
@@ -97,7 +97,7 @@ def build_q_func(network, hiddens=[256], dueling=True, layer_norm=False, **netwo
         network = get_network_builder(network)(**network_kwargs)
 
     def q_func_builder(input_placeholder, num_actions, scope, reuse=False):
-        with tf.variable_scope(scope, reuse=reuse):
+        with tf.compat.v1.variable_scope(scope, reuse=reuse):
             latent = network(input_placeholder)
             if isinstance(latent, tuple):
                 if latent[1] is not None:
@@ -106,7 +106,7 @@ def build_q_func(network, hiddens=[256], dueling=True, layer_norm=False, **netwo
 
             latent = layers.flatten(latent)
 
-            with tf.variable_scope("action_value"):
+            with tf.compat.v1.variable_scope("action_value"):
                 action_out = latent
                 for hidden in hiddens:
                     action_out = layers.fully_connected(action_out, num_outputs=hidden, activation_fn=None)
@@ -116,7 +116,7 @@ def build_q_func(network, hiddens=[256], dueling=True, layer_norm=False, **netwo
                 action_scores = layers.fully_connected(action_out, num_outputs=num_actions, activation_fn=None)
 
             if dueling:
-                with tf.variable_scope("state_value"):
+                with tf.compat.v1.variable_scope("state_value"):
                     state_out = latent
                     for hidden in hiddens:
                         state_out = layers.fully_connected(state_out, num_outputs=hidden, activation_fn=None)

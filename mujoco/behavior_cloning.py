@@ -18,11 +18,11 @@ class Policy(object):
         self.sess = tf.Session(graph=self.graph)
 
         with self.graph.as_default():
-            self.inp = tf.placeholder(tf.float32,[None,ob_dim])
-            self.l = tf.placeholder(tf.float32,[None,ac_dim])
-            self.l2_reg = tf.placeholder(tf.float32,[])
+            self.inp = tf.compat.v1.placeholder(tf.float32,[None,ob_dim])
+            self.l = tf.compat.v1.placeholder(tf.float32,[None,ac_dim])
+            self.l2_reg = tf.compat.v1.placeholder(tf.float32,[])
 
-            with tf.variable_scope('weights') as param_scope:
+            with tf.compat.v1.variable_scope('weights') as param_scope:
                 self.fc1 = Linear('fc1',ob_dim,embedding_dims)
                 self.fc2 = Linear('fc2',embedding_dims,embedding_dims)
                 self.fc3 = Linear('fc3',embedding_dims,embedding_dims)
@@ -48,7 +48,7 @@ class Policy(object):
             weight_decay = tf.reduce_sum(self.fc1.w**2) + tf.reduce_sum(self.fc2.w**2) + tf.reduce_sum(self.fc3.w**2)
             self.l2_loss = self.l2_reg * weight_decay
 
-            self.optim = tf.train.AdamOptimizer(1e-4)
+            self.optim = tf.compat.v1.train.AdamOptimizer(1e-4)
             self.update_op = self.optim.minimize(self.loss+self.l2_loss,var_list=self.parameters(train=True))
 
             self.saver = tf.train.Saver(var_list=self.parameters(train=False),max_to_keep=0)
@@ -61,7 +61,7 @@ class Policy(object):
 
     def parameters(self,train=False):
         if train:
-            return tf.trainable_variables(self.param_scope.name)
+            return tf.compat.v1.trainable_variables(self.param_scope.name)
         else:
             return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,self.param_scope.name)
 
@@ -197,9 +197,9 @@ def train(args):
     init_op = tf.group(tf.global_variables_initializer(),
                         tf.local_variables_initializer())
     # Training configuration
-    config = tf.ConfigProto()
+    config = tf.compat.v1.ConfigProto()
     config.gpu_options.allow_growth = True
-    sess = tf.InteractiveSession()
+    sess = tf.compat.v1.InteractiveSession()
 
     sess.run(init_op)
 
@@ -217,9 +217,9 @@ def eval(args):
     init_op = tf.group(tf.global_variables_initializer(),
                         tf.local_variables_initializer())
     # Training configuration
-    config = tf.ConfigProto()
+    config = tf.compat.v1.ConfigProto()
     config.gpu_options.allow_growth = True
-    sess = tf.InteractiveSession()
+    sess = tf.compat.v1.InteractiveSession()
 
     sess.run(init_op)
     policy.saver.restore(sess,logdir+'/model.ckpt')

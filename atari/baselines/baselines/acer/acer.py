@@ -64,16 +64,16 @@ class Model(object):
         nact = ac_space.n
         nbatch = nenvs * nsteps
 
-        A = tf.placeholder(tf.int32, [nbatch]) # actions
-        D = tf.placeholder(tf.float32, [nbatch]) # dones
-        R = tf.placeholder(tf.float32, [nbatch]) # rewards, not returns
-        MU = tf.placeholder(tf.float32, [nbatch, nact]) # mu's
-        LR = tf.placeholder(tf.float32, [])
+        A = tf.compat.v1.placeholder(tf.int32, [nbatch]) # actions
+        D = tf.compat.v1.placeholder(tf.float32, [nbatch]) # dones
+        R = tf.compat.v1.placeholder(tf.float32, [nbatch]) # rewards, not returns
+        MU = tf.compat.v1.placeholder(tf.float32, [nbatch, nact]) # mu's
+        LR = tf.compat.v1.placeholder(tf.float32, [])
         eps = 1e-6
 
-        step_ob_placeholder = tf.placeholder(dtype=ob_space.dtype, shape=(nenvs,) + ob_space.shape)
-        train_ob_placeholder = tf.placeholder(dtype=ob_space.dtype, shape=(nenvs*(nsteps+1),) + ob_space.shape)
-        with tf.variable_scope('acer_model', reuse=tf.AUTO_REUSE):
+        step_ob_placeholder = tf.compat.v1.placeholder(dtype=ob_space.dtype, shape=(nenvs,) + ob_space.shape)
+        train_ob_placeholder = tf.compat.v1.placeholder(dtype=ob_space.dtype, shape=(nenvs*(nsteps+1),) + ob_space.shape)
+        with tf.compat.v1.variable_scope('acer_model', reuse=tf.compat.v1.AUTO_REUSE):
 
             step_model = policy(observ_placeholder=step_ob_placeholder, sess=sess)
             train_model = policy(observ_placeholder=train_ob_placeholder, sess=sess)
@@ -93,7 +93,7 @@ class Model(object):
             print(v.name)
             return v
 
-        with tf.variable_scope("acer_model", custom_getter=custom_getter, reuse=True):
+        with tf.compat.v1.variable_scope("acer_model", custom_getter=custom_getter, reuse=True):
             polyak_model = policy(observ_placeholder=train_ob_placeholder, sess=sess)
 
         # Notation: (var) = batch variable, (var)s = seqeuence variable, (var)_i = variable index by action at step i
@@ -130,13 +130,13 @@ class Model(object):
 
         # Truncated importance sampling
         adv = qret - v
-        logf = tf.log(f_i + eps)
+        logf = tf.math.log(f_i + eps)
         gain_f = logf * tf.stop_gradient(adv * tf.minimum(c, rho_i))  # [nenvs * nsteps]
         loss_f = -tf.reduce_mean(gain_f)
 
         # Bias correction for the truncation
         adv_bc = (q - tf.reshape(v, [nenvs * nsteps, 1]))  # [nenvs * nsteps, nact]
-        logf_bc = tf.log(f + eps) # / (f_old + eps)
+        logf_bc = tf.math.log(f + eps) # / (f_old + eps)
         check_shape([adv_bc, logf_bc], [[nenvs * nsteps, nact]]*2)
         gain_bc = tf.reduce_sum(logf_bc * tf.stop_gradient(adv_bc * tf.nn.relu(1.0 - (c / (rho + eps))) * f), axis = 1) #IMP: This is sum, as expectation wrt f
         loss_bc= -tf.reduce_mean(gain_bc)

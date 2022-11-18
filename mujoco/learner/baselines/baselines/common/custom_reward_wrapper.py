@@ -34,14 +34,14 @@ class VecTFRandomReward(VecEnvWrapper):
 
         self.graph = tf.Graph()
 
-        config = tf.ConfigProto(
+        config = tf.compat.v1.ConfigProto(
             device_count = {'GPU': 0}) # Run on CPU
         #config.gpu_options.allow_growth = True
         self.sess = tf.Session(graph=self.graph,config=config)
 
         with self.graph.as_default():
             with self.sess.as_default():
-                self.obs = tf.placeholder(tf.float32,[None,84,84,4])
+                self.obs = tf.compat.v1.placeholder(tf.float32,[None,84,84,4])
 
                 self.rewards = tf.reduce_mean(
                     tf.random_normal(tf.shape(self.obs)),axis=[1,2,3])
@@ -72,7 +72,7 @@ class VecTFPreferenceReward(VecEnvWrapper):
 
         self.graph = tf.Graph()
 
-        config = tf.ConfigProto(
+        config = tf.compat.v1.ConfigProto(
             device_count = {'GPU': 0}) # Run on CPU
         #config.gpu_options.allow_growth = True
         self.sess = tf.Session(graph=self.graph,config=config)
@@ -88,7 +88,7 @@ class VecTFPreferenceReward(VecEnvWrapper):
 
                 self.models = []
                 for i in range(num_models):
-                    with tf.variable_scope('model_%d'%i):
+                    with tf.compat.v1.variable_scope('model_%d'%i):
                         model = Model(include_action,self.venv.observation_space.shape[0],self.venv.action_space.shape[0],num_layers=num_layers,embedding_dims=embedding_dims)
                         model.saver.restore(self.sess,model_dir+'/model_%d.ckpt'%(i))
                     self.models.append(model)

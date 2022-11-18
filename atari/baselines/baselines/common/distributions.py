@@ -49,9 +49,9 @@ class PdType(object):
         raise NotImplementedError
 
     def param_placeholder(self, prepend_shape, name=None):
-        return tf.placeholder(dtype=tf.float32, shape=prepend_shape+self.param_shape(), name=name)
+        return tf.compat.v1.placeholder(dtype=tf.float32, shape=prepend_shape+self.param_shape(), name=name)
     def sample_placeholder(self, prepend_shape, name=None):
-        return tf.placeholder(dtype=self.sample_dtype(), shape=prepend_shape+self.sample_shape(), name=name)
+        return tf.compat.v1.placeholder(dtype=self.sample_dtype(), shape=prepend_shape+self.sample_shape(), name=name)
 
     def __eq__(self, other):
         return (type(self) == type(other)) and (self.__dict__ == other.__dict__)
@@ -100,7 +100,7 @@ class DiagGaussianPdType(PdType):
 
     def pdfromlatent(self, latent_vector, init_scale=1.0, init_bias=0.0):
         mean = _matching_fc(latent_vector, 'pi', self.size, init_scale=init_scale, init_bias=init_bias)
-        logstd = tf.get_variable(name='pi/logstd', shape=[1, self.size], initializer=tf.zeros_initializer())
+        logstd = tf.compat.v1.get_variable(name='pi/logstd', shape=[1, self.size], initializer=tf.zeros_initializer())
         pdparam = tf.concat([mean, mean * 0.0 + logstd], axis=1)
         return self.pdfromflat(pdparam), mean
 
@@ -146,8 +146,8 @@ class BernoulliPdType(PdType):
 #     def entropy(self):
 #         return tf.nn.softmax_cross_entropy_with_logits(self.logits, self.ps)
 #     def sample(self):
-#         u = tf.random_uniform(tf.shape(self.logits))
-#         return U.argmax(self.logits - tf.log(-tf.log(u)), axis=-1)
+#         u = tf.random.uniform(tf.shape(self.logits))
+#         return U.argmax(self.logits - tf.math.log(-tf.math.log(u)), axis=-1)
 
 class CategoricalPd(Pd):
     def __init__(self, logits):
@@ -177,7 +177,7 @@ class CategoricalPd(Pd):
             # already encoded
             assert x.shape.as_list() == self.logits.shape.as_list()
 
-        return tf.nn.softmax_cross_entropy_with_logits_v2(
+        return tf.nn.softmax_cross_entropy_with_logits(
             logits=self.logits,
             labels=x)
     def kl(self, other):
@@ -188,16 +188,16 @@ class CategoricalPd(Pd):
         z0 = tf.reduce_sum(ea0, axis=-1, keepdims=True)
         z1 = tf.reduce_sum(ea1, axis=-1, keepdims=True)
         p0 = ea0 / z0
-        return tf.reduce_sum(p0 * (a0 - tf.log(z0) - a1 + tf.log(z1)), axis=-1)
+        return tf.reduce_sum(p0 * (a0 - tf.math.log(z0) - a1 + tf.math.log(z1)), axis=-1)
     def entropy(self):
         a0 = self.logits - tf.reduce_max(self.logits, axis=-1, keepdims=True)
         ea0 = tf.exp(a0)
         z0 = tf.reduce_sum(ea0, axis=-1, keepdims=True)
         p0 = ea0 / z0
-        return tf.reduce_sum(p0 * (tf.log(z0) - a0), axis=-1)
+        return tf.reduce_sum(p0 * (tf.math.log(z0) - a0), axis=-1)
     def sample(self):
-        u = tf.random_uniform(tf.shape(self.logits), dtype=self.logits.dtype)
-        return tf.argmax(self.logits - tf.log(-tf.log(u)), axis=-1)
+        u = tf.random.uniform(tf.shape(self.logits), dtype=self.logits.dtype)
+        return tf.argmax(self.logits - tf.math.log(-tf.math.log(u)), axis=-1)
     @classmethod
     def fromflat(cls, flat):
         return cls(flat)
@@ -235,7 +235,7 @@ class DiagGaussianPd(Pd):
         return self.mean
     def neglogp(self, x):
         return 0.5 * tf.reduce_sum(tf.square((x - self.mean) / self.std), axis=-1) \
-               + 0.5 * np.log(2.0 * np.pi) * tf.to_float(tf.shape(x)[-1]) \
+               + 0.5 * np.log(2.0 * np.pi) * tf.compat.v1.to_float(tf.shape(x)[-1]) \
                + tf.reduce_sum(self.logstd, axis=-1)
     def kl(self, other):
         assert isinstance(other, DiagGaussianPd)
@@ -261,14 +261,14 @@ class BernoulliPd(Pd):
     def mode(self):
         return tf.round(self.ps)
     def neglogp(self, x):
-        return tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.logits, labels=tf.to_float(x)), axis=-1)
+        return tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.logits, labels=tf.compat.v1.to_float(x)), axis=-1)
     def kl(self, other):
         return tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=other.logits, labels=self.ps), axis=-1) - tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.logits, labels=self.ps), axis=-1)
     def entropy(self):
         return tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.logits, labels=self.ps), axis=-1)
     def sample(self):
-        u = tf.random_uniform(tf.shape(self.ps))
-        return tf.to_float(math_ops.less(u, self.ps))
+        u = tf.random.uniform(tf.shape(self.ps))
+        return tf.compat.v1.to_float(math_ops.less(u, self.ps))
     @classmethod
     def fromflat(cls, flat):
         return cls(flat)
@@ -325,7 +325,7 @@ def validate_probtype(probtype, pdparam):
     pd = probtype.pdfromflat(M)
     calcloglik = U.function([X, M], pd.logp(X))
     calcent = U.function([M], pd.entropy())
-    Xval = tf.get_default_session().run(pd.sample(), feed_dict={M:Mval})
+    Xval = tf.compat.v1.get_default_session().run(pd.sample(), feed_dict={M:Mval})
     logliks = calcloglik(Xval, Mval)
     entval_ll = - logliks.mean() #pylint: disable=E1101
     entval_ll_stderr = logliks.std() / np.sqrt(N) #pylint: disable=E1101

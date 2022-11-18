@@ -3,11 +3,11 @@ import tensorflow as tf
 class Conv2d(object) :
     def __init__(self,name,input_dim,output_dim,k_h=4,k_w=4,d_h=2,d_w=2,
                  stddev=0.02, data_format='NCHW',padding='SAME') :
-        with tf.variable_scope(name) :
+        with tf.compat.v1.variable_scope(name) :
             assert(data_format == 'NCHW' or data_format == 'NHWC')
-            self.w = tf.get_variable('w', [k_h, k_w, input_dim, output_dim],
+            self.w = tf.compat.v1.get_variable('w', [k_h, k_w, input_dim, output_dim],
                                 initializer=tf.truncated_normal_initializer(stddev=stddev))
-            self.b = tf.get_variable('b',[output_dim], initializer=tf.constant_initializer(0.0))
+            self.b = tf.compat.v1.get_variable('b',[output_dim], initializer=tf.constant_initializer(0.0))
             if( data_format == 'NCHW' ) :
                 self.strides = [1, 1, d_h, d_w]
             else :
@@ -35,13 +35,13 @@ class Conv2d(object) :
 class WeightNormConv2d(object):
     def __init__(self,name,input_dim,output_dim,k_h=4,k_w=4,d_h=2,d_w=2,
                  stddev=0.02, data_format='NHWC',padding='SAME',epsilon=1e-9) :
-        with tf.variable_scope(name) :
+        with tf.compat.v1.variable_scope(name) :
             assert data_format == 'NHWC'
-            self.v = tf.get_variable('v', [k_h, k_w, input_dim, output_dim],
+            self.v = tf.compat.v1.get_variable('v', [k_h, k_w, input_dim, output_dim],
                                 initializer=tf.truncated_normal_initializer(stddev=stddev))
-            self.g = tf.get_variable('g',[output_dim],
+            self.g = tf.compat.v1.get_variable('g',[output_dim],
                                      initializer=tf.constant_initializer(float('nan')))
-            self.b = tf.get_variable('b',[output_dim],
+            self.b = tf.compat.v1.get_variable('b',[output_dim],
                                      initializer=tf.constant_initializer(float('nan')))
 
             self.strides = [1, d_h, d_w, 1]
@@ -74,11 +74,11 @@ class WeightNormConv2d(object):
 class DepthConv2d(object) :
     def __init__(self,name,input_dim,channel_multiplier,k_h=4,k_w=4,d_h=2,d_w=2,
                  stddev=0.02, data_format='NCHW', padding='SAME') :
-        with tf.variable_scope(name) :
+        with tf.compat.v1.variable_scope(name) :
             assert(data_format == 'NCHW' or data_format == 'NHWC')
-            self.w = tf.get_variable('w', [k_h, k_w, input_dim, channel_multiplier],
+            self.w = tf.compat.v1.get_variable('w', [k_h, k_w, input_dim, channel_multiplier],
                                 initializer=tf.truncated_normal_initializer(stddev=stddev))
-            self.b = tf.get_variable('b',[input_dim*channel_multiplier], initializer=tf.constant_initializer(0.0))
+            self.b = tf.compat.v1.get_variable('b',[input_dim*channel_multiplier], initializer=tf.constant_initializer(0.0))
             if( data_format == 'NCHW' ) :
                 self.strides = [1, 1, d_h, d_w]
             else :
@@ -95,11 +95,11 @@ class DepthConv2d(object) :
 class Conv3d(object) :
     def __init__(self,name,input_dim,output_dim,k_t=2,k_h=4,k_w=4,d_t=1,d_h=1,d_w=1,
                  stddev=0.02, data_format='NDHWC') :
-        with tf.variable_scope(name) :
+        with tf.compat.v1.variable_scope(name) :
             assert(data_format == 'NDHWC')
-            self.w = tf.get_variable('w', [k_t, k_h, k_w, input_dim, output_dim],
+            self.w = tf.compat.v1.get_variable('w', [k_t, k_h, k_w, input_dim, output_dim],
                                 initializer=tf.truncated_normal_initializer(stddev=stddev))
-            self.b = tf.get_variable('b',[output_dim], initializer=tf.constant_initializer(0.0))
+            self.b = tf.compat.v1.get_variable('b',[output_dim], initializer=tf.constant_initializer(0.0))
             self.strides = [d_t,d_h,d_w]
     def __call__(self,input_var,name=None,w=None,b=None,**kwargs) :
         w = w if w is not None else self.w
@@ -118,11 +118,11 @@ class Conv3d(object) :
 class DilatedConv3D(object) :
     def __init__(self,name,input_dim,output_dim,k_t=2,k_h=3,k_w=3,d_t=2,d_h=1,d_w=1,
                  stddev=0.02, data_format='NDHWC') :
-        with tf.variable_scope(name) :
+        with tf.compat.v1.variable_scope(name) :
             assert(data_format == 'NDHWC')
-            self.w = tf.get_variable('w', [k_t, k_h, k_w, input_dim, output_dim],
+            self.w = tf.compat.v1.get_variable('w', [k_t, k_h, k_w, input_dim, output_dim],
                                 initializer=tf.truncated_normal_initializer(stddev=stddev))
-            self.b = tf.get_variable('b',[output_dim], initializer=tf.constant_initializer(0.0))
+            self.b = tf.compat.v1.get_variable('b',[output_dim], initializer=tf.constant_initializer(0.0))
             self.strides = [1,1,1]
             self.dilates = [d_t, d_h, d_w]
     def __call__(self,input_var,name=None) :
@@ -136,10 +136,10 @@ class DilatedConv3D(object) :
 
 class Linear(object) :
     def __init__(self,name,input_dim,output_dim,stddev=0.02) :
-        with tf.variable_scope(name) :
-            self.w = tf.get_variable('w',[input_dim, output_dim],
+        with tf.compat.v1.variable_scope(name) :
+            self.w = tf.compat.v1.get_variable('w',[input_dim, output_dim],
                                 initializer=tf.random_normal_initializer(stddev=stddev))
-            self.b = tf.get_variable('b',[output_dim],
+            self.b = tf.compat.v1.get_variable('b',[output_dim],
                                 initializer=tf.constant_initializer(0.0))
 
     def __call__(self,input_var,name=None,w=None,b=None,**kwargs) :
@@ -156,12 +156,12 @@ class Linear(object) :
 
 class WeightNormLinear(object):
     def __init__(self,name,input_dim,output_dim,stddev=0.02,epsilon=1e-10) :
-        with tf.variable_scope(name) :
-            self.v = tf.get_variable('v',[input_dim, output_dim],
+        with tf.compat.v1.variable_scope(name) :
+            self.v = tf.compat.v1.get_variable('v',[input_dim, output_dim],
                                      initializer=tf.random_normal_initializer(stddev=stddev))
-            self.g = tf.get_variable('g',[output_dim],
+            self.g = tf.compat.v1.get_variable('g',[output_dim],
                                      initializer=tf.constant_initializer(float('nan')))
-            self.b = tf.get_variable('b',[output_dim],
+            self.b = tf.compat.v1.get_variable('b',[output_dim],
                                      initializer=tf.constant_initializer(float('nan')))
             self.epsilon = epsilon
 
@@ -192,10 +192,10 @@ class SymPadConv2d(object): #Resize and Convolution(upsacle by 2)
     def __init__(self,name,input_dim,output_dim,
                  k_h=3,k_w=3,stddev=0.02) :
         assert k_h%2==1 and k_w%2==1, 'kernel size should be odd numbers to ensure exact size'
-        with tf.variable_scope(name) :
-            self.w = tf.get_variable('w', [k_h, k_w, input_dim, output_dim],
+        with tf.compat.v1.variable_scope(name) :
+            self.w = tf.compat.v1.get_variable('w', [k_h, k_w, input_dim, output_dim],
                                 initializer=tf.random_normal_initializer(stddev=stddev))
-            self.b = tf.get_variable('b',[output_dim], initializer=tf.constant_initializer(0.0))
+            self.b = tf.compat.v1.get_variable('b',[output_dim], initializer=tf.constant_initializer(0.0))
 
         self.padding = [ [0,0],[k_h//2,k_h//2],[k_w//2,k_w//2],[0,0] ]
 
@@ -215,7 +215,7 @@ class WeightNormSymPadConv2d(object): #Resize and Convolution(upsacle by 2)
     def __init__(self,name,input_dim,output_dim,
                  k_h=3,k_w=3,stddev=0.02) :
         assert k_h%2==1 and k_w%2==1, 'kernel size should be odd numbers to ensure exact size'
-        with tf.variable_scope(name) :
+        with tf.compat.v1.variable_scope(name) :
             self.conv2d = WeightNormConv2d('conv',input_dim,output_dim,k_h,k_w,1,1,data_format='NHWC',padding='VALID')
         self.padding = [ [0,0],[k_h//2,k_h//2],[k_w//2,k_w//2],[0,0] ]
 
@@ -231,10 +231,10 @@ class WeightNormSymPadConv2d(object): #Resize and Convolution(upsacle by 2)
 class TransposedConv2d(object):
     def __init__(self,name,input_dim,out_dim,
                  k_h=4,k_w=4,d_h=2,d_w=2,stddev=0.02,data_format='NCHW') :
-        with tf.variable_scope(name) :
-            self.w = tf.get_variable('w', [k_h, k_w, out_dim, input_dim],
+        with tf.compat.v1.variable_scope(name) :
+            self.w = tf.compat.v1.get_variable('w', [k_h, k_w, out_dim, input_dim],
                                 initializer=tf.random_normal_initializer(stddev=stddev))
-            self.b = tf.get_variable('b',[out_dim], initializer=tf.constant_initializer(0.0))
+            self.b = tf.compat.v1.get_variable('b',[out_dim], initializer=tf.constant_initializer(0.0))
 
         self.data_format = data_format
         if( data_format =='NCHW' ):
@@ -260,13 +260,13 @@ class TransposedConv2d(object):
 class WeightNormTransposedConv2d(object):
     def __init__(self,name,input_dim,out_dim,
                  k_h=4,k_w=4,d_h=2,d_w=2,stddev=0.02,data_format='NHWC',epsilon=1e-9) :
-        with tf.variable_scope(name) :
+        with tf.compat.v1.variable_scope(name) :
             assert data_format == 'NHWC'
-            self.v = tf.get_variable('v', [k_h, k_w, out_dim, input_dim],
+            self.v = tf.compat.v1.get_variable('v', [k_h, k_w, out_dim, input_dim],
                                 initializer=tf.truncated_normal_initializer(stddev=stddev))
-            self.g = tf.get_variable('g',[out_dim],
+            self.g = tf.compat.v1.get_variable('g',[out_dim],
                                      initializer=tf.constant_initializer(float('nan')))
-            self.b = tf.get_variable('b',[out_dim],
+            self.b = tf.compat.v1.get_variable('b',[out_dim],
                                      initializer=tf.constant_initializer(float('nan')))
 
             self.strides = [1, d_h, d_w, 1]
@@ -318,15 +318,15 @@ class LayerNorm():
 
         """
         TODO: Track Moving mean and variance, and use this statistics.
-        with tf.variable_scope(name):
-            self.moving_mean = tf.get_variable('moving_mean',[dims], initializer=tf.constant_initializer(0.0), trainable=False)
-            self.moving_variance = tf.get_variable('moving_variance',[dims], initializer=tf.constant_initializer(1.0), trainable=False)
+        with tf.compat.v1.variable_scope(name):
+            self.moving_mean = tf.compat.v1.get_variable('moving_mean',[dims], initializer=tf.constant_initializer(0.0), trainable=False)
+            self.moving_variance = tf.compat.v1.get_variable('moving_variance',[dims], initializer=tf.constant_initializer(1.0), trainable=False)
         """
 
         if out_dim is not None:
-            with tf.variable_scope(name) :
-                self.gamma= tf.get_variable('gamma',[1,1,1,out_dim], initializer=tf.constant_initializer(1.0))
-                self.beta = tf.get_variable('beta',[out_dim], initializer=tf.constant_initializer(0.0))
+            with tf.compat.v1.variable_scope(name) :
+                self.gamma= tf.compat.v1.get_variable('gamma',[1,1,1,out_dim], initializer=tf.constant_initializer(1.0))
+                self.beta = tf.compat.v1.get_variable('beta',[out_dim], initializer=tf.constant_initializer(0.0))
         else:
             self.gamma = None
             self.beta = None
@@ -368,17 +368,17 @@ class BatchNorm(object):
         self.axis = axis
         self.center=center
         self.scale=scale
-        with tf.variable_scope(name) as scope:
-            with tf.variable_scope('bn') :
-                self.gamma= tf.get_variable('gamma',[dims], initializer=tf.constant_initializer(1.0))
-                self.beta = tf.get_variable('beta',[dims], initializer=tf.constant_initializer(0.0))
-                self.moving_mean = tf.get_variable('moving_mean',[dims], initializer=tf.constant_initializer(0.0), trainable=False)
-                self.moving_variance = tf.get_variable('moving_variance',[dims], initializer=tf.constant_initializer(1.0), trainable=False)
+        with tf.compat.v1.variable_scope(name) as scope:
+            with tf.compat.v1.variable_scope('bn') :
+                self.gamma= tf.compat.v1.get_variable('gamma',[dims], initializer=tf.constant_initializer(1.0))
+                self.beta = tf.compat.v1.get_variable('beta',[dims], initializer=tf.constant_initializer(0.0))
+                self.moving_mean = tf.compat.v1.get_variable('moving_mean',[dims], initializer=tf.constant_initializer(0.0), trainable=False)
+                self.moving_variance = tf.compat.v1.get_variable('moving_variance',[dims], initializer=tf.constant_initializer(1.0), trainable=False)
         self.scope = scope
 
     def __call__(self,input_var,is_training,**xargs) :
-        with tf.variable_scope(self.scope) :
-            return tf.layers.batch_normalization(
+        with tf.compat.v1.variable_scope(self.scope) :
+            return tf.compat.v1.layers.batch_normalization(
                 input_var,
                 axis=self.axis,
                 momentum=self.momentum,

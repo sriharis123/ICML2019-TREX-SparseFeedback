@@ -14,6 +14,8 @@ from run_test import *
 import matplotlib.pylab as plt
 import argparse
 
+tf.compat.v1.disable_eager_execution()
+
 parser = argparse.ArgumentParser(description=None)
 parser.add_argument('--env_name', default='', help='Select the environment name to run, i.e. pong')
 parser.add_argument('--reward_net_path', default='', help="name and location for learned model params")
@@ -46,7 +48,7 @@ env_type = "atari"
 seed = args.seed
 torch.manual_seed(seed)
 np.random.seed(seed)
-tf.set_random_seed(seed)
+tf.random.set_seed(seed)
 
 print(env_id)
 
@@ -96,7 +98,7 @@ class Net(nn.Module):
             x = F.leaky_relu(self.conv2(x))
             x = F.leaky_relu(self.conv3(x))
             x = F.leaky_relu(self.conv4(x))
-            x = x.view(-1, 784)
+            x = x.reshape(-1, 784)
             x = F.leaky_relu(self.fc1(x))
             r = torch.sigmoid(self.fc2(x))
             sum_rewards += r
@@ -181,7 +183,12 @@ model_dir = args.models_dir
 demonstrations = []
 learning_returns_demos = []
 pred_returns_demos = []
-for checkpoint in checkpoints_demos:
+
+for i, checkpoint in enumerate(checkpoints_demos):
+
+    #too little RAM -- need to skip some.
+    if i != len(checkpoints_demos) and i % 2 == 1:
+        continue
 
     model_path = model_dir + "/models/" + env_name + "_25/" + checkpoint
     if env_name == "seaquest":
@@ -221,6 +228,10 @@ learning_returns_extrapolate = []
 pred_returns_extrapolate = []
 
 for checkpoint in checkpoints_extrapolate:
+
+    #too little RAM -- need to skip some.
+    if i != len(checkpoints_demos) and i % 2 == 1:
+        continue
 
     model_path = model_dir + "/models/" + env_name + "_25/" + checkpoint
     if env_name == "seaquest":

@@ -23,10 +23,10 @@ class PPO2Agent(object):
         self.graph = tf.Graph()
 
         if gpu:
-            config = tf.ConfigProto()
+            config = tf.compat.v1.ConfigProto()
             config.gpu_options.allow_growth = True
         else:
-            config = tf.ConfigProto(device_count = {'GPU': 0})
+            config = tf.compat.v1.ConfigProto(device_count = {'GPU': 0})
 
         self.sess = tf.Session(graph=self.graph,config=config)
 
@@ -89,15 +89,15 @@ class Model(object):
         self.include_action = include_action
         in_dims = ob_dim+ac_dim if include_action else ob_dim
 
-        self.inp = tf.placeholder(tf.float32,[None,in_dims])
-        self.x = tf.placeholder(tf.float32,[None,in_dims]) #[B*steps,in_dim]
-        self.y = tf.placeholder(tf.float32,[None,in_dims])
-        self.x_split = tf.placeholder(tf.int32,[batch_size]) # B-lengthed vector indicating the size of each steps
-        self.y_split = tf.placeholder(tf.int32,[batch_size]) # B-lengthed vector indicating the size of each steps
-        self.l = tf.placeholder(tf.int32,[batch_size]) # [0 when x is better 1 when y is better]
-        self.l2_reg = tf.placeholder(tf.float32,[]) # [0 when x is better 1 when y is better]
+        self.inp = tf.compat.v1.placeholder(tf.float32,[None,in_dims])
+        self.x = tf.compat.v1.placeholder(tf.float32,[None,in_dims]) #[B*steps,in_dim]
+        self.y = tf.compat.v1.placeholder(tf.float32,[None,in_dims])
+        self.x_split = tf.compat.v1.placeholder(tf.int32,[batch_size]) # B-lengthed vector indicating the size of each steps
+        self.y_split = tf.compat.v1.placeholder(tf.int32,[batch_size]) # B-lengthed vector indicating the size of each steps
+        self.l = tf.compat.v1.placeholder(tf.int32,[batch_size]) # [0 when x is better 1 when y is better]
+        self.l2_reg = tf.compat.v1.placeholder(tf.float32,[]) # [0 when x is better 1 when y is better]
 
-        with tf.variable_scope('weights') as param_scope:
+        with tf.compat.v1.variable_scope('weights') as param_scope:
             self.fcs = []
             last_dims = in_dims
             for l in range(num_layers):
@@ -135,14 +135,14 @@ class Model(object):
         pred = tf.cast(tf.greater(self.v_y,self.v_x),tf.int32)
         self.acc = tf.reduce_mean(tf.cast(tf.equal(pred,self.l),tf.float32))
 
-        self.optim = tf.train.AdamOptimizer(1e-4)
+        self.optim = tf.compat.v1.train.AdamOptimizer(1e-4)
         self.update_op = self.optim.minimize(self.loss+self.l2_loss,var_list=self.parameters(train=True))
 
         self.saver = tf.train.Saver(var_list=self.parameters(train=False),max_to_keep=0)
 
     def parameters(self,train=False):
         if train:
-            return tf.trainable_variables(self.param_scope.name)
+            return tf.compat.v1.trainable_variables(self.param_scope.name)
         else:
             return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,self.param_scope.name)
 
@@ -156,7 +156,7 @@ class Model(object):
                 sigma^{1,2}: shape of [steps,in_dims]
                 mu : 0 or 1
         """
-        sess = tf.get_default_session()
+        sess = tf.compat.v1.get_default_session()
 
         idxes = np.random.permutation(len(D))
         train_idxes = idxes[:int(len(D)*0.8)]
@@ -213,7 +213,7 @@ class Model(object):
             #    break
 
     def train_with_dataset(self,dataset,batch_size,include_action=False,iter=10000,l2_reg=0.01,debug=False):
-        sess = tf.get_default_session()
+        sess = tf.compat.v1.get_default_session()
 
         for it in tqdm(range(iter),dynamic_ncols=True):
             b_x,b_y,x_split,y_split,b_l = dataset.batch(batch_size=batch_size,include_action=include_action)
@@ -231,7 +231,7 @@ class Model(object):
                     tqdm.write(('loss: %f (l2_loss: %f), acc: %f'%(loss,l2_loss,acc)))
 
     def eval(self,D,batch_size=64):
-        sess = tf.get_default_session()
+        sess = tf.compat.v1.get_default_session()
 
         b_x,b_y,b_l = zip(*D)
         b_x,b_y,b_l = np.array(b_x),np.array(b_y),np.array(b_l)
@@ -251,7 +251,7 @@ class Model(object):
         return np.concatenate(b_r_x,axis=0), b_acc/len(b_x)
 
     def get_reward(self,obs,acs,batch_size=1024):
-        sess = tf.get_default_session()
+        sess = tf.compat.v1.get_default_session()
 
         if self.include_action:
             inp = np.concatenate((obs,acs),axis=1)
@@ -616,16 +616,16 @@ def train(args):
 
     models = []
     for i in range(args.num_models):
-        with tf.variable_scope('model_%d'%i):
+        with tf.compat.v1.variable_scope('model_%d'%i):
             models.append(Model(args.include_action,env.observation_space.shape[0],env.action_space.shape[0],steps=args.steps,num_layers=args.num_layers,embedding_dims=args.embedding_dims))
 
     ### Initialize Parameters
     init_op = tf.group(tf.global_variables_initializer(),
                         tf.local_variables_initializer())
     # Training configuration
-    config = tf.ConfigProto()
+    config = tf.compat.v1.ConfigProto()
     config.gpu_options.allow_growth = True
-    sess = tf.InteractiveSession()
+    sess = tf.compat.v1.InteractiveSession()
 
     sess.run(init_op)
 
@@ -666,16 +666,16 @@ def eval(args):
 
     models = []
     for i in range(args.num_models):
-        with tf.variable_scope('model_%d'%i):
+        with tf.compat.v1.variable_scope('model_%d'%i):
             models.append(Model(args.include_action,env.observation_space.shape[0],env.action_space.shape[0],steps=args.steps))
 
     ### Initialize Parameters
     init_op = tf.group(tf.global_variables_initializer(),
                         tf.local_variables_initializer())
     # Training configuration
-    config = tf.ConfigProto()
+    config = tf.compat.v1.ConfigProto()
     config.gpu_options.allow_growth = True
-    sess = tf.InteractiveSession()
+    sess = tf.compat.v1.InteractiveSession()
 
     sess.run(init_op)
 

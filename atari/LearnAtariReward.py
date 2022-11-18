@@ -185,7 +185,7 @@ class Net(nn.Module):
         x = F.leaky_relu(self.conv2(x))
         x = F.leaky_relu(self.conv3(x))
         x = F.leaky_relu(self.conv4(x))
-        x = x.view(-1, 784)
+        x = x.reshape(-1, 784)
         x = F.leaky_relu(self.fc1(x))
         r = self.fc2(x)
         sum_rewards += torch.sum(r)
@@ -209,7 +209,7 @@ def learn_reward(reward_network, optimizer, training_inputs, training_outputs, n
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # Assume that we are on a CUDA machine, then this should print a CUDA device:
     print(device)
-    loss_criterion = nn.CrossEntropyLoss()
+    loss_criterion = nn.CrossEntropyLoss() #nn.CrossEntropyLoss().cuda() if torch.cuda.is_available() else nn.CrossEntropyLoss()
     
     cum_loss = 0.0
     training_data = list(zip(training_inputs, training_outputs))
@@ -231,7 +231,7 @@ def learn_reward(reward_network, optimizer, training_inputs, training_outputs, n
             #forward + backward + optimize
             outputs, abs_rewards = reward_network.forward(traj_i, traj_j)
             outputs = outputs.unsqueeze(0)
-            loss = loss_criterion(outputs, labels) + l1_reg * abs_rewards
+            loss = loss_criterion(outputs.to(device), labels.type(torch.LongTensor).to(device)) + l1_reg * abs_rewards
             loss.backward()
             optimizer.step()
 
@@ -290,6 +290,7 @@ def predict_traj_return(net, traj):
 
 
 if __name__=="__main__":
+    tf.compat.v1.disable_eager_execution()
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('--env_name', default='', help='Select the environment name to run, i.e. pong')
     parser.add_argument('--reward_model_path', default='', help="name and location for learned model params, e.g. ./learned_models/breakout.params")
@@ -317,7 +318,7 @@ if __name__=="__main__":
     seed = int(args.seed)
     torch.manual_seed(seed)
     np.random.seed(seed)
-    tf.set_random_seed(seed)
+    tf.random.set_seed(seed)
 
     print("Training reward for", env_id)
     num_trajs =  args.num_trajs

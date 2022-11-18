@@ -9,7 +9,7 @@ from baselines.common.mpi_running_mean_std import RunningMeanStd
 from baselines.common import tf_util as U
 
 def logsigmoid(a):
-    '''Equivalent to tf.log(tf.sigmoid(a))'''
+    '''Equivalent to tf.math.log(tf.sigmoid(a))'''
     return -tf.nn.softplus(-a)
 
 """ Reference: https://github.com/openai/imitation/blob/99fbccf3e060b6e6c739bdf209758620fcdefd3c/policyopt/thutil.py#L48-L51"""
@@ -30,8 +30,8 @@ class TransitionClassifier(object):
         generator_logits = self.build_graph(self.generator_obs_ph, self.generator_acs_ph, reuse=False)
         expert_logits = self.build_graph(self.expert_obs_ph, self.expert_acs_ph, reuse=True)
         # Build accuracy
-        generator_acc = tf.reduce_mean(tf.to_float(tf.nn.sigmoid(generator_logits) < 0.5))
-        expert_acc = tf.reduce_mean(tf.to_float(tf.nn.sigmoid(expert_logits) > 0.5))
+        generator_acc = tf.reduce_mean(tf.compat.v1.to_float(tf.nn.sigmoid(generator_logits) < 0.5))
+        expert_acc = tf.reduce_mean(tf.compat.v1.to_float(tf.nn.sigmoid(expert_logits) > 0.5))
         # Build regression loss
         # let x = logits, z = targets.
         # z * -log(sigmoid(x)) + (1 - z) * -log(1 - sigmoid(x))
@@ -48,23 +48,23 @@ class TransitionClassifier(object):
         self.loss_name = ["generator_loss", "expert_loss", "entropy", "entropy_loss", "generator_acc", "expert_acc"]
         self.total_loss = generator_loss + expert_loss + entropy_loss
         # Build Reward for policy
-        self.reward_op = -tf.log(1-tf.nn.sigmoid(generator_logits)+1e-8)
+        self.reward_op = -tf.math.log(1-tf.nn.sigmoid(generator_logits)+1e-8)
         var_list = self.get_trainable_variables()
         self.lossandgrad = U.function([self.generator_obs_ph, self.generator_acs_ph, self.expert_obs_ph, self.expert_acs_ph],
                                       self.losses + [U.flatgrad(self.total_loss, var_list)])
 
     def build_ph(self):
-        self.generator_obs_ph = tf.placeholder(tf.float32, (None, ) + self.observation_shape, name="observations_ph")
-        self.generator_acs_ph = tf.placeholder(tf.float32, (None, ) + self.actions_shape, name="actions_ph")
-        self.expert_obs_ph = tf.placeholder(tf.float32, (None, ) + self.observation_shape, name="expert_observations_ph")
-        self.expert_acs_ph = tf.placeholder(tf.float32, (None, ) + self.actions_shape, name="expert_actions_ph")
+        self.generator_obs_ph = tf.compat.v1.placeholder(tf.float32, (None, ) + self.observation_shape, name="observations_ph")
+        self.generator_acs_ph = tf.compat.v1.placeholder(tf.float32, (None, ) + self.actions_shape, name="actions_ph")
+        self.expert_obs_ph = tf.compat.v1.placeholder(tf.float32, (None, ) + self.observation_shape, name="expert_observations_ph")
+        self.expert_acs_ph = tf.compat.v1.placeholder(tf.float32, (None, ) + self.actions_shape, name="expert_actions_ph")
 
     def build_graph(self, obs_ph, acs_ph, reuse=False):
-        with tf.variable_scope(self.scope):
+        with tf.compat.v1.variable_scope(self.scope):
             if reuse:
-                tf.get_variable_scope().reuse_variables()
+                tf.get_compat.v1.variable_scope().reuse_variables()
 
-            with tf.variable_scope("obfilter"):
+            with tf.compat.v1.variable_scope("obfilter"):
                 self.obs_rms = RunningMeanStd(shape=self.observation_shape)
             obs = (obs_ph - self.obs_rms.mean / self.obs_rms.std)
             _input = tf.concat([obs, acs_ph], axis=1)  # concatenate the two input -> form a transition
@@ -77,7 +77,7 @@ class TransitionClassifier(object):
         return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, self.scope)
 
     def get_reward(self, obs, acs):
-        sess = tf.get_default_session()
+        sess = tf.compat.v1.get_default_session()
         if len(obs.shape) == 1:
             obs = np.expand_dims(obs, 0)
         if len(acs.shape) == 1:
