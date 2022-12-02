@@ -17,6 +17,7 @@ import torch.nn.functional as F
 from run_test import *
 from baselines.common.trex_utils import preprocess
 
+#generate demos using PPO2Agent.
 
 def generate_novice_demos(env, env_name, agent, model_dir):
     checkpoint_min = 50
@@ -46,6 +47,7 @@ def generate_novice_demos(env, env_name, agent, model_dir):
     demonstrations = []
     learning_returns = []
     learning_rewards = []
+    #iterate over each PPO checkpoint
     for checkpoint in checkpoints:
 
         model_path = model_dir + "/models/" + env_name + "_25/" + checkpoint
@@ -53,7 +55,8 @@ def generate_novice_demos(env, env_name, agent, model_dir):
             model_path = model_dir + "/models/" + env_name + "_5/" + checkpoint
 
         agent.load(model_path)
-        episode_count = 1
+        episode_count = 1 #why?
+        #add episode_count trajectories to demonstrations list
         for i in range(episode_count):
             done = False
             traj = []
@@ -66,7 +69,7 @@ def generate_novice_demos(env, env_name, agent, model_dir):
             while True:
                 action = agent.act(ob, r, done)
                 ob, r, done, _ = env.step(action)
-                ob_processed = preprocess(ob, env_name)
+                ob_processed = preprocess(ob, env_name) #masks the score/life portion of game
                 ob_processed = ob_processed[0] #get rid of first dimension ob.shape = (1,84,84,4)
                 traj.append(ob_processed)
 
@@ -82,6 +85,9 @@ def generate_novice_demos(env, env_name, agent, model_dir):
             learning_returns.append(acc_reward)
             learning_rewards.append(gt_rewards)
 
+
+    # not saving demos here
+    # demos are returned after being aggregated with each PPO checkpoint
     return demonstrations, learning_returns, learning_rewards
 
 
@@ -89,7 +95,7 @@ def generate_novice_demos(env, env_name, agent, model_dir):
 
 
 
-
+# before this, demos are ordered in decreasing ground truth reward. so earlier trajs are better and thus label is 1 over 0.
 def create_training_data(demonstrations, num_trajs, num_snippets, min_snippet_length, max_snippet_length):
     #collect training data
     max_traj_length = 0
@@ -166,6 +172,7 @@ class Net(nn.Module):
     def __init__(self):
         super().__init__()
 
+        # in_channels, out_channels, kernel_size, stride=1
         self.conv1 = nn.Conv2d(4, 16, 7, stride=3)
         self.conv2 = nn.Conv2d(16, 16, 5, stride=2)
         self.conv3 = nn.Conv2d(16, 16, 3, stride=1)
@@ -204,6 +211,7 @@ class Net(nn.Module):
 
 
 # Train the network
+# trained on benefit of some trajectories over others. So the fixed-sized snippets/labels from create_training_data are used as input
 def learn_reward(reward_network, optimizer, training_inputs, training_outputs, num_iter, l1_reg, checkpoint_dir):
     #check if gpu available
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
