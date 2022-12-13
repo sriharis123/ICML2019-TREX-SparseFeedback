@@ -39,7 +39,10 @@ class Runner(AbstractEnvRunner):
             for info in infos:
                 maybeepinfo = info.get('episode')
                 if maybeepinfo: epinfos.append(maybeepinfo)
+
             mb_rewards.append(rewards)
+            #else:
+            #    mb_rewards.append(rewards[mb_actions[_]])
         #batch of steps to batch of rollouts
         mb_obs = np.asarray(mb_obs, dtype=self.obs.dtype)
         mb_rewards = np.asarray(mb_rewards, dtype=np.float32)
@@ -50,8 +53,8 @@ class Runner(AbstractEnvRunner):
         last_values = self.model.value(self.obs, S=self.states, M=self.dones)
 
         # discount/bootstrap off value fn
-        mb_returns = np.zeros_like(mb_rewards)
-        mb_advs = np.zeros_like(mb_rewards)
+        mb_returns = np.zeros_like(mb_values)
+        mb_advs = np.zeros_like(mb_values)
         lastgaelam = 0
         for t in reversed(range(self.nsteps)):
             if t == self.nsteps - 1:
@@ -60,7 +63,15 @@ class Runner(AbstractEnvRunner):
             else:
                 nextnonterminal = 1.0 - mb_dones[t+1]
                 nextvalues = mb_values[t+1]
-            delta = mb_rewards[t] + self.gamma * nextvalues * nextnonterminal - mb_values[t]
+
+            j = 0
+            a = []
+            for i in mb_actions[t]:
+                a.append(mb_rewards[t][j][i])
+                j += 1
+
+            delta = a + self.gamma * nextvalues * nextnonterminal - mb_values[t]
+
             mb_advs[t] = lastgaelam = delta + self.gamma * self.lam * nextnonterminal * lastgaelam
         mb_returns = mb_advs + mb_values
         return (*map(sf01, (mb_obs, mb_returns, mb_dones, mb_actions, mb_values, mb_neglogpacs)),

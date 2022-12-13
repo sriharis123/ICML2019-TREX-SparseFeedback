@@ -1,9 +1,11 @@
+import numpy as np
+
 def normalize_state(obs):
     return obs / 255.0
 
 
 #custom masking function for covering up the score/life portions of atari games
-def mask_score(obs, env_name):
+def mask_score(obs, env_name, contrast=False):
     obs_copy = obs.copy()
     if env_name == "spaceinvaders" or env_name == "breakout" or env_name == "pong":
         #takes a stack of four observations and blacks out (sets to zero) top n rows
@@ -51,8 +53,10 @@ def mask_score(obs, env_name):
         pass
         #n = 20
         #obs_copy[:,-n:,:,:] = 0
+    if contrast:
+        obs_copy = 1 / (1 + np.exp(-100*(obs_copy - 0.11)))
     return obs_copy
 
-def preprocess(ob, env_name):
+def preprocess(ob, env_name, contrast=False):
     #print("masking on env", env_name)
-    return mask_score(normalize_state(ob), env_name)
+    return mask_score(normalize_state(ob), env_name, contrast)
